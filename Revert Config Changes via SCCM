@@ -1,0 +1,153 @@
+$global:ScriptFailed = $false
+
+##================================================
+## MARK: Logging Function
+##================================================
+
+# Define the Log file path
+$logFilePath = "C:\Windows\fndr\logs\"
+$logFileName = "$logFilePath\CallCenterConfig_Revert.log"
+
+# Function to write logs
+function Write-Log {
+    param (
+        [string]$message
+    )
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "FNDR: $timestamp - $message"
+    Write-Host $logMessage
+
+    if (-not (Test-Path $logFilePath)) {
+        New-Item -Path $logFilePath -ItemType Directory | Out-Null
+    }
+    Add-Content -Path $logFileName -Value $logMessage
+}
+
+try {
+    Stop-Process -Name "callcenter" -Force -ErrorAction SilentlyContinue
+    Write-Log "callcenter process has been stopped"
+} catch {
+    Write-Log "Failed to stop callcenter process: $_"
+}
+
+try {
+    Stop-Process -Name "tsclient" -Force -ErrorAction SilentlyContinue
+    Write-Log "tsclient process has been stopped"
+} catch {
+    Write-Log "Failed to stop tsclient process: $_"
+}
+
+##================================================
+## MARK: Config.json
+##================================================
+
+# Variables
+$SourceConfigJson = "C:\Program Files (x86)\Call Center Market Manager\"
+$TargetOldConfigJson = Join-Path $SourceConfigJson "config.json.old"
+$TargetNewConfigJson = Join-Path $SourceConfigJson "config.json"
+
+if (Test-Path $TargetOldConfigJson) {
+    if (Test-Path $TargetNewConfigJson) {
+        try {
+            Remove-Item -Path $TargetNewConfigJson -Force -ErrorAction Stop
+            Write-Log "$TargetNewConfigJson has successfully been removed"
+        } catch {
+            Write-Log "Failed to remove $TargetNewConfigJson. Error: $_"
+            $global:ScriptFailed = $true
+        }  
+        try {
+            Rename-Item -Path $TargetOldConfigJson -NewName "config.json" -Force -ErrorAction Stop
+            Write-Log "$TargetOldConfigJson has been reverted back to config.json"
+        } catch {
+            Write-Log "Failed to revert changes: $_"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "File could not be found: $TargetNewConfigJson"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "File could not be found: $TargetOldConfigJson"
+    $global:ScriptFailed = $true
+}
+
+##================================================
+## MARK: App.Config.json
+##================================================
+
+# Variables
+$SourceAppJson = "C:\Program Files (x86)\TSClient\"
+$TargetOldAppConfig = Join-Path $SourceAppJson "app.config.json.old"
+$TargetNewAppConfig = Join-Path $SourceAppJson "app.config.json"
+
+if (Test-Path $TargetOldAppConfig) {
+    if (Test-Path $TargetNewAppConfig) {
+        try {
+            Remove-Item -Path $TargetNewAppConfig -Force -ErrorAction Stop
+            Write-Log "$TargetNewAppConfig has successfully been removed"
+        } catch {
+            Write-Log "Failed to remove $TargetNewAppConfig. Error: $_"
+            $global:ScriptFailed = $true
+        }
+        try {
+            Rename-Item -Path $TargetOldAppConfig -NewName "app.config.json" -Force -ErrorAction Stop
+            Write-Log "$TargetOldAppConfig has been reverted back to app.config.json"
+        }catch {
+            Write-Log "Failed to revert changes: $_"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "File could not be found: $TargetNewAppConfig"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "File could not be found: $TargetOldAppConfig"
+    $global:ScriptFailed = $true
+}
+
+##================================================
+## MARK: Config.xml
+##================================================
+
+# Variables
+$SourceXML = "C:\Program Files (x86)\Call Center Market Manager\dependencies\LaTSapiWeb\"
+$TargetOldXML = Join-Path $SourceXML "config.xml.old"
+$TargetNewXML = Join-Path $SourceXML "config.xml"
+
+if (Test-Path $TargetOldXML) {
+    if (Test-Path $TargetNewXML){
+        try{
+            Remove-Item -Path $TargetNewXML -Force -ErrorAction Stop
+            Write-Log "$TargetNewXML has successfully been removed"
+        } catch {
+            Write-Log "Failed to remove $TargetNewXML. Error: $_"
+            $global:ScriptFailed = $true
+        }
+        try{
+            Rename-Item -Path $TargetOldXML -NewName "config.xml" -Force -ErrorAction Stop
+            Write-Log "$TargetOldXML has been reverted back to config.xml"
+        } catch {
+            Write-Log "Failed to revert changes: $_"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "File could not be found: $TargetNewXML"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "File could not be found: $TargetOldXML"
+    $global:ScriptFailed = $true
+}
+
+##================================================
+## MARK: Exit Codes
+##================================================
+
+# Define Exit codes
+if ($global:ScriptFailed) {
+    Write-Log "CallCenter Config revert failed"
+    Exit 1
+} else {
+    Write-Log "CallCenter Config revert has completed successfully."
+    Exit 0
+}
