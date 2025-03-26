@@ -1,0 +1,177 @@
+$global:ScriptFailed = $false
+
+##================================================
+## MARK: Logging Function
+##================================================
+
+# Define the Log file path
+$logFilePath = "C:\Windows\fndr\logs\"
+
+# Automatically generate log file name based on script name
+$scriptName = [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.MyCommand.Path)
+$logFileName = "$logFilePath\$scriptName.log"
+
+# Function to write logs
+function Write-Log {
+    param (
+        [string]$message
+    )
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "$timestamp - $message"
+
+    # Ensure log file path exists
+    if (-not (Test-Path $logFilePath)) {
+        New-Item -Path $logFilePath -ItemType Directory | Out-Null
+    }
+
+    # If log file doesn't exist, create it and write the first message
+    if (-not (Test-Path $logFileName)) {
+        Set-Content -Path $logFileName -Value $logMessage
+    } else {
+        # Append subsequent messages to the existing log
+        Add-Content -Path $logFileName -Value $logMessage
+    }
+}
+
+##================================================
+## MARK: Stop Processes
+##================================================
+
+try {
+    Stop-Process -Name "callcenter" -Force -ErrorAction SilentlyContinue
+    Write-Log "callcenter process has been stopped"
+} catch {
+    Write-Log "Failed to stop callcenter process: $_"
+}
+
+try {
+    Stop-Process -Name "tsclient" -Force -ErrorAction SilentlyContinue
+    Write-Log "tsclient process has been stopped"
+} catch {
+    Write-Log "Failed to stop tsclient process: $_"
+}
+
+##================================================
+## MARK: Config.json
+##================================================
+
+# Variables
+$SourceConfigJson = "C:\Windows\temp\CAS042B1\config.json"
+$DestConfigJson = "C:\Program Files (x86)\Call Center Market Manager\"
+$TargetConfigJson = Join-Path $DestConfigJson "config.json"
+
+# Rename old config.json
+try {
+    Rename-Item -Path $TargetConfigJson -NewName "config.json.old" -Force -ErrorAction Stop
+    Write-Log "$TargetConfigJson has been renamed to config.json.old"
+} catch {
+    Write-Log "Failed to rename config.json: $_"
+    $global:ScriptFailed = $true
+}
+
+# Test both source and dest, if true copy source to dest
+if (Test-Path $SourceConfigJson) {
+    if(Test-Path $DestConfigJson) {
+        try {
+            Copy-Item $SourceConfigJson -Destination $DestConfigJson -Force -ErrorAction Stop
+            Write-Log "$SourceConfigJson has been copied to $DestConfigJson"
+        } catch {
+            Write-Log "Failed to copy $SourceConfigJson to $DestConfigJson"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "Destination folder does not exist: $DestConfigJson"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "Source file does not exist: $SourceConfigJson"
+    $global:ScriptFailed = $true
+    
+}
+
+##================================================
+## MARK: App.Config.json
+##================================================
+
+# Variables
+$SourceAppJson = "C:\Windows\temp\CAS042B1\app.config.json"
+$DestAppJson = "C:\Program Files (x86)\TSClient\"
+$TargetAppJson = Join-Path $DestAppJson "app.config.json"
+
+# Rename old App.config.json
+try {
+    Rename-Item -Path $TargetAppJson -NewName "app.config.json.old" -Force -ErrorAction Stop
+    Write-Log "$TargetAppJson has been renamed to app.config.json.old"
+} catch {
+    Write-Log "Failed to rename app.config.json: $_"
+    $global:ScriptFailed = $true
+}
+
+# Test both source and dest, if true copy source to dest
+if (Test-Path $SourceAppJson) {
+    if(Test-Path $DestAppJson) {
+        try {
+            Copy-Item $SourceAppJson -Destination $DestAppJson -Force -ErrorAction Stop
+            Write-Log "$SourceAppJson has been copied to $DestAppJson"
+        } catch {
+            Write-Log "Failed to copy $SourceAppJson to $DestAppJson"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "Destination folder does not exist: $DestAppJson"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "Source file does not exist: $SourceAppJson"
+    $global:ScriptFailed = $true
+}
+
+##================================================
+## MARK: Config.xml
+##================================================
+
+# Variables
+$SourceXML = "C:\Windows\temp\CAS042B1\config.xml"
+$DestXML = "C:\Program Files (x86)\Call Center Market Manager\dependencies\LaTSapiWeb\"
+$TargetXML = Join-Path $DestXML "config.xml"
+
+# Rename old xml
+try {
+    Rename-Item -Path $TargetXML -NewName "config.xml.old" -Force -ErrorAction Stop
+    Write-Log "$TargetXML has been renamed to config.xml.old"
+} catch {
+    Write-Log "Failed to rename config.xml: $_"
+    $global:ScriptFailed = $true
+}
+
+# Test both source and dest, if true copy source to dest
+if (Test-Path $SourceXML) {
+    if(Test-Path $DestXML) {
+        try {
+            Copy-Item $SourceXML -Destination $DestXML -Force -ErrorAction Stop
+            Write-Log "$SourceXML has been copied to $DestXML"
+        } catch {
+            Write-Log "Failed to copy $SourceXML to $DestXML"
+            $global:ScriptFailed = $true
+        }
+    } else {
+        Write-Log "Destination folder does not exist: $DestXML"
+        $global:ScriptFailed = $true
+    }
+} else {
+    Write-Log "Source file does not exist: $SourceXML"
+    $global:ScriptFailed = $true
+}
+
+##================================================
+## MARK: Exit Codes
+##================================================
+
+# Define Exit codes
+if ($global:ScriptFailed) {
+    Write-Log "CallCenter Config update failed"
+    Exit 1
+} else {
+    Write-Log "CallCenter Config update has completed successfully."
+    Exit 0
+}
